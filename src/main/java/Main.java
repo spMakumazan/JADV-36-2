@@ -6,12 +6,12 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
         Thread printedThread = new Thread(() -> {
-            synchronized (sizeToFreq) {
-                while (!Thread.interrupted()) {
+            while (!Thread.interrupted()){
+                synchronized (sizeToFreq) {
                     try {
                         sizeToFreq.wait();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        return;
                     }
                     int countRepetitionMaxValue = 0;
                     for (Map.Entry<Integer, Integer> entry : sizeToFreq.entrySet()) {
@@ -25,6 +25,7 @@ public class Main {
                                     entry.getKey(), countRepetitionMaxValue);
                         }
                     }
+                    System.out.println();
                 }
             }
         });
@@ -33,7 +34,6 @@ public class Main {
         List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             Thread thread = new Thread(() -> {
-                synchronized (sizeToFreq) {
                     String route = generateRoute("RLRFR", 100);
                     int count = 0;
                     for (int c = 0; c < route.length(); c++) {
@@ -41,6 +41,7 @@ public class Main {
                             count++;
                         }
                     }
+                    synchronized (sizeToFreq) {
                     if (sizeToFreq.containsKey(count)) {
                         sizeToFreq.put(count, sizeToFreq.get(count) + 1);
                     } else {
@@ -49,10 +50,13 @@ public class Main {
                     sizeToFreq.notify();
                 }
             });
-            thread.start();
             threads.add(thread);
         }
 
+        for (Thread thread : threads) {
+            thread.start();
+            Thread.sleep(10);
+        }
 
         for (Thread thread : threads) {
             thread.join();
